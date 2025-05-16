@@ -1,34 +1,30 @@
-
-from flask import Flask, request
-import telegram
 import os
+import requests
+from flask import Flask
 
 app = Flask(__name__)
-bot_token = os.environ.get("BOT_TOKEN")
-bot = telegram.Bot(token=bot_token)
 
-@app.route('/')
-def home():
-    return 'Coordinator AI is online.'
+# 🔐 Injected Bot Credentials
+TELEGRAM_TOKEN = "7719709224:AAEQShc0d0Ol79rZLykcNyzXgB5WnGh214A"
+CHAT_ID = "1194534732"
 
-@app.route(f'/{bot_token}', methods=['POST'])
-def webhook():
-    update = telegram.Update.de_json(request.get_json(force=True), bot)
-    chat_id = update.effective_chat.id
-    text = update.message.text if update.message else ''
-
-    if text.startswith('/start_vote'):
-        bot.send_message(chat_id=chat_id, text="🗳️ Voting started.")
-    elif text.startswith('/end_vote'):
-        bot.send_message(chat_id=chat_id, text="📊 Voting ended. Logging results...")
-    elif text.startswith('/assign_task'):
-        bot.send_message(chat_id=chat_id, text="📌 Task assigned.")
-    elif text.startswith('/status'):
-        bot.send_message(chat_id=chat_id, text="📡 Coordinator AI is active and monitoring.")
+def send_startup_alert():
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": "🧠 Coordinator AI is now LIVE and responding on Telegram."
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        print("✅ Telegram alert sent:", response.json())
     else:
-        bot.send_message(chat_id=chat_id, text="🤖 Command received.")
+        print("❌ Failed to send Telegram alert:", response.status_code, response.text)
 
-    return 'ok'
+@app.route("/")
+def home():
+    send_startup_alert()
+    return "✅ Coordinator AI is running and webhook is connected."
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+if __name__ == "__main__":
+    print("🚀 Launching Coordinator AI Webhook...")
+    app.run(host="0.0.0.0", port=10000)
